@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -11,10 +12,76 @@ import {
   Sparkles,
   TerminalSquare,
   UserRound,
+  Volume2,
 } from "lucide-react";
 import { profileLinks } from "../data/projects";
+import TalkingAvatar from "./TalkingAvatar";
+
+const profileIntroduction =
+  "Hello, I am Nayan Tupe, an AI and machine learning developer focused on building useful digital products. I create prediction systems, FastAPI backends, responsive React dashboards, and business intelligence experiences. My work connects data, engineering, and thoughtful interface design to solve practical problems. Scroll through my portfolio to explore Retail IQ, my technical skills, project evidence, and deployment work.";
 
 function Hero() {
+  const [isTalking, setIsTalking] = useState(false);
+  const [speechMessage, setSpeechMessage] = useState("");
+  const hasIntroduced = useRef(false);
+
+  const playIntroduction = useCallback(() => {
+    if (!("speechSynthesis" in window)) return;
+    const speech = window.speechSynthesis;
+    const introduction = new SpeechSynthesisUtterance(profileIntroduction);
+    const voices = speech.getVoices();
+    const preferredVoice =
+      voices.find((voice) => voice.lang === "en-IN") ||
+      voices.find((voice) => voice.lang.startsWith("en"));
+
+    if (preferredVoice) introduction.voice = preferredVoice;
+    introduction.lang = preferredVoice?.lang || "en-IN";
+    introduction.rate = 0.72;
+    introduction.pitch = 0.96;
+    introduction.volume = 1;
+
+    introduction.onstart = () => {
+      hasIntroduced.current = true;
+      setIsTalking(true);
+      setSpeechMessage("Now playing Nayan's professional introduction");
+    };
+    introduction.onend = () => {
+      setIsTalking(false);
+      setSpeechMessage("Click the AI avatar to replay the introduction");
+    };
+    introduction.onerror = (event) => {
+      setIsTalking(false);
+      if (event.error !== "canceled") {
+        setSpeechMessage("Click the AI avatar to play the introduction");
+      }
+    };
+
+    speech.cancel();
+    speech.speak(introduction);
+  }, []);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return undefined;
+
+    const speech = window.speechSynthesis;
+    const startAfterInteraction = () => {
+      if (!hasIntroduced.current) playIntroduction();
+    };
+
+    const autoStartTimer = window.setTimeout(playIntroduction, 1400);
+    window.addEventListener("pointerdown", startAfterInteraction, { passive: true });
+    window.addEventListener("keydown", startAfterInteraction);
+    window.addEventListener("scroll", startAfterInteraction, { passive: true, once: true });
+
+    return () => {
+      window.clearTimeout(autoStartTimer);
+      window.removeEventListener("pointerdown", startAfterInteraction);
+      window.removeEventListener("keydown", startAfterInteraction);
+      window.removeEventListener("scroll", startAfterInteraction);
+      speech.cancel();
+    };
+  }, [playIntroduction]);
+
   return (
     <section className="hero section-pad">
       <div className="hero-background-grid" />
@@ -104,26 +171,47 @@ function Hero() {
           </code>
         </div>
 
-        <div className="portrait-shell">
+        <div className={`portrait-shell${isTalking ? " is-talking" : ""}`}>
           <div className="portrait-shadow-card" />
           <div className="portrait-holo-frame" />
 
-          <div className="portrait-main-card">
-            <div className="portrait-top-strip">
-              <span />
-              <span />
-              <span />
-            </div>
-
+          <button
+            className="portrait-main-card"
+            type="button"
+            onClick={playIntroduction}
+            aria-label="Play Nayan Tupe's AI introduction"
+          >
             <div className="portrait-image-wrap">
-              <img src="/images/profile.jpg" alt="Nayan Tupe" />
+              <TalkingAvatar isTalking={isTalking} />
+              <div className="talking-wave" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className="ai-guide-badge">
+                <span className="ai-guide-dot" />
+                Interactive AI Introduction
+              </div>
             </div>
 
             <div className="portrait-info-card">
-              <span>Available For Roles</span>
+              <span>{isTalking ? "Speaking Now" : "Click Avatar To Hear Me"}</span>
               <strong>Nayan Tupe</strong>
-              <p>Data Science • ML • Full Stack Developer</p>
+              <p>AI/ML Developer • React • FastAPI • Data Products</p>
             </div>
+          </button>
+
+          <div className={`avatar-speech-bubble${isTalking ? " is-speaking" : ""}`}>
+            <span>{isTalking ? "Let me introduce my work..." : "Click me — I can introduce this portfolio."}</span>
+          </div>
+
+          <div className="profile-speech-status visible" aria-live="polite">
+            <Volume2 size={15} />
+            <span>
+              {speechMessage || "Click the AI avatar to play my professional introduction"}
+            </span>
           </div>
         </div>
 
@@ -164,6 +252,11 @@ function Hero() {
         <span className="orbit-chip chip-fastapi">FastAPI</span>
         <span className="orbit-chip chip-ml">ML</span>
       </motion.div>
+
+      <a className="hero-scroll-cue" href="#about" aria-label="Scroll to About section">
+        <span>Explore</span>
+        <i aria-hidden="true" />
+      </a>
     </section>
   );
 }
