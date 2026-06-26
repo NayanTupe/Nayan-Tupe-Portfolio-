@@ -15,10 +15,13 @@ import gsap from "gsap";
 import Lenis from "lenis";
 import {
   ArrowUpRight,
+  Award,
   BrainCircuit,
   Code2,
   Database,
   Download,
+  FileText,
+  FolderOpen,
   GitBranch,
   Mail,
   RadioTower,
@@ -56,6 +59,54 @@ const achievements = [
   "Responsive dashboards, reports, analytics views and business workflows",
 ];
 
+const experienceItems = [
+  {
+    role: "Technology Intern",
+    company: "Z-Aksys Solutions, Vashi Navi Mumbai",
+    date: "Mar 2026 - Present",
+    points: [
+      "Developed and maintained 15+ responsive web pages using Git/GitHub.",
+      "Performed QA testing, identified/logged 20+ bugs and supported fixes.",
+      "Managed website content updates and digital campaign support using Mailchimp.",
+      "Built practical exposure to production websites and client-ready delivery.",
+    ],
+  },
+  {
+    role: "Logistics Clearing & Documentation Executive",
+    company: "Ace Clearing And Forwarding, Navi Mumbai",
+    date: "Mar 2024 - Nov 2025",
+    points: [
+      "Handled import/export clearance documents and shipping records.",
+      "Worked on ODEX document submission and process tracking.",
+      "Built documentation discipline and business process understanding.",
+    ],
+  },
+];
+
+const certifications = [
+  {
+    title: "Data Science Diploma",
+    source: "Boston Institute Of Analytics",
+    date: "Mar 2025 - Nov 2025",
+  },
+  {
+    title: "Artificial Intelligence Diploma",
+    source: "Boston Institute Of Analytics",
+    date: "May 2025 - Nov 2025",
+  },
+  {
+    title: "Data Science Internship",
+    source: "Spinnaker Analytics Pvt. Ltd.",
+    date: "2-month internship",
+  },
+];
+
+const projectPreviewImages = {
+  "RetailIQ - AI SaaS Analytics Platform": "/images/retailiq-dashboard.png",
+  "TradingMLModel - ML Backtesting & Paper Trading": "/images/tradingml-dashboard-preview.png",
+  "KKC Spices - ERP Reports Dashboard": "/images/kkc-spices-dashboard-preview.png",
+};
+
 function seededValue(seed) {
   const value = Math.sin(seed * 12.9898) * 43758.5453;
   return value - Math.floor(value);
@@ -92,17 +143,17 @@ function CameraRig({ scrollRef, pointerRef }) {
 
     camera.position.x = THREE.MathUtils.lerp(
       camera.position.x,
-      Math.sin(scroll * Math.PI * 1.6) * 2.4 + pointer.x * 0.75,
-      delta * 1.8,
+      Math.sin(scroll * Math.PI * 1.2) * 1.35 + pointer.x * 0.38,
+      delta * 1.15,
     );
     camera.position.y = THREE.MathUtils.lerp(
       camera.position.y,
-      1.4 + Math.cos(scroll * Math.PI * 1.3) * 0.65 + pointer.y * 0.45,
-      delta * 1.8,
+      1.35 + Math.cos(scroll * Math.PI * 1.1) * 0.34 + pointer.y * 0.24,
+      delta * 1.15,
     );
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, 7.5 - scroll * 3.8, delta * 1.3);
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, 7.8 - scroll * 2.6, delta * 1.05);
 
-    target.set(pointer.x * 0.7, pointer.y * 0.45, -2.5 - scroll * 5 + Math.sin(time * 0.25));
+    target.set(pointer.x * 0.38, pointer.y * 0.22, -2.5 - scroll * 3.2 + Math.sin(time * 0.18));
     camera.lookAt(target);
   });
 
@@ -415,7 +466,7 @@ function Loader({ onComplete }) {
 }
 
 function HudNav() {
-  const navItems = ["intro", "about", "skills", "projects", "timeline", "contact"];
+  const navItems = ["intro", "about", "skills", "projects", "experience", "proof", "contact"];
 
   return (
     <header className="hud-nav">
@@ -473,6 +524,9 @@ function HeroScene() {
         <div className="hero-command-row">
           <a className="quantum-btn primary magnetic" href="#projects">
             Enter the work <ArrowUpRight size={18} />
+          </a>
+          <a className="quantum-btn magnetic" href="#proof">
+            <FolderOpen size={18} /> Proof
           </a>
           <a className="quantum-btn magnetic" href={profileLinks.github} target="_blank">
             <GitBranch size={18} /> GitHub
@@ -563,12 +617,16 @@ function SkillsScene() {
 }
 
 function ProjectsScene() {
-  const spotlightProjects = [featuredProject, ...projects.slice(1, 5)];
+  const spotlightProjects = projects.slice(0, 3);
 
   return (
     <section id="projects" className="cinema-section projects-cinema">
       <div className="section-kicker">Project Portals</div>
-      <h2>Movie-poster project worlds with live deployment proof.</h2>
+      <h2>Recruiter-ready project proof with cinematic previews.</h2>
+      <p className="section-subtitle">
+        Important projects are kept visible: live links, GitHub links, tech stack, and
+        presentation proof stay one scan away.
+      </p>
       <div className="portal-grid">
         {spotlightProjects.map((project, index) => (
           <motion.article
@@ -581,14 +639,15 @@ function ProjectsScene() {
           >
             <div className="portal-media">
               <img
-                src={index === 0 ? "/images/retailiq-dashboard.png" : "/images/retailiq-prediction.png"}
+                src={projectPreviewImages[project.title] || "/images/retailiq-dashboard.png"}
                 alt={`${project.title} preview`}
               />
               <span />
             </div>
             <div className="portal-content">
-              <p>{project.category || project.subtitle}</p>
+              <p>{index === 0 ? "Project Highlight" : project.category}</p>
               <h3>{project.title}</h3>
+              <span className="portal-description">{project.description}</span>
               <div className="portal-tags">
                 {(project.tech || featuredProject.tech).slice(0, 5).map((item) => (
                   <span key={item}>{item}</span>
@@ -610,29 +669,124 @@ function ProjectsScene() {
           </motion.article>
         ))}
       </div>
+      <div className="project-evidence-grid">
+        {projects.map((project, index) => (
+          <motion.article
+            className="evidence-card magnetic"
+            key={project.title}
+            initial={{ opacity: 0, y: 34 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-8%" }}
+            transition={{ delay: index * 0.035 }}
+          >
+            <div>
+              <p>{project.category}</p>
+              <h3>{project.title}</h3>
+              <span>{project.description}</span>
+            </div>
+            <div className="portal-tags">
+              {project.tech.slice(0, 5).map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+            <div className="portal-actions">
+              {project.live && (
+                <a href={project.live} target="_blank">
+                  Live <ArrowUpRight size={15} />
+                </a>
+              )}
+              {project.github && (
+                <a href={project.github} target="_blank">
+                  Code <Code2 size={15} />
+                </a>
+              )}
+              {project.presentation && (
+                <a href={project.presentation} target="_blank">
+                  PPT <FileText size={15} />
+                </a>
+              )}
+            </div>
+          </motion.article>
+        ))}
+      </div>
     </section>
   );
 }
 
-function TimelineScene() {
+function ExperienceScene() {
   return (
-    <section id="timeline" className="cinema-section timeline-cinema">
-      <div className="section-kicker">Mission Timeline</div>
-      <h2>Achievements appear like signal bursts along an energy beam.</h2>
+    <section id="experience" className="cinema-section timeline-cinema">
+      <div className="section-kicker">Experience Timeline</div>
+      <h2>Professional exposure and delivery proof.</h2>
       <div className="energy-timeline">
-        {achievements.map((achievement, index) => (
+        {experienceItems.map((item, index) => (
           <motion.div
             className="timeline-node magnetic"
-            key={achievement}
+            key={item.role}
             initial={{ opacity: 0, x: index % 2 ? 120 : -120, scale: 0.9 }}
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
             viewport={{ once: true, margin: "-10%" }}
             transition={{ duration: 0.7, delay: index * 0.08 }}
           >
-            <span>0{index + 1}</span>
-            <p>{achievement}</p>
+            <span>{item.date}</span>
+            <h3>{item.role}</h3>
+            <p>{item.company}</p>
+            <ul>
+              {item.points.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
           </motion.div>
         ))}
+      </div>
+      <div className="achievement-strip">
+        {achievements.map((achievement, index) => (
+          <span key={achievement}>
+            0{index + 1} / {achievement}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProofScene() {
+  return (
+    <section id="proof" className="cinema-section proof-cinema">
+      <div className="section-kicker">Certificates & Proof</div>
+      <h2>Documents, certificates, resume, screenshots and deployment evidence.</h2>
+      <div className="proof-grid">
+        {certifications.map((item) => (
+          <motion.article
+            className="proof-card magnetic"
+            key={item.title}
+            initial={{ opacity: 0, y: 36 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-10%" }}
+          >
+            <Award size={22} />
+            <h3>{item.title}</h3>
+            <p>{item.source}</p>
+            <span>{item.date}</span>
+          </motion.article>
+        ))}
+      </div>
+      <div className="proof-console">
+        <div>
+          <h3>Portfolio proof folder</h3>
+          <p>
+            Project presentations, certificates, screenshots, resumes and deployment proof
+            are available in one Drive folder for quick recruiter verification.
+          </p>
+        </div>
+        <div className="hero-command-row">
+          <a className="quantum-btn primary magnetic" href={profileLinks.portfolioDrive} target="_blank">
+            <FolderOpen size={18} /> Open Drive
+          </a>
+          <a className="quantum-btn magnetic" href={profileLinks.resumeWithCertificates} download>
+            <FileText size={18} /> Resume + Certificates
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -704,10 +858,12 @@ function CinematicPortfolio() {
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.25,
+      duration: 1.55,
+      lerp: 0.075,
       smoothWheel: true,
-      wheelMultiplier: 0.82,
-      touchMultiplier: 1.15,
+      wheelMultiplier: 0.72,
+      touchMultiplier: 1,
+      easing: (time) => Math.min(1, 1.001 - 2 ** (-10 * time)),
     });
 
     const raf = (time) => {
@@ -754,7 +910,8 @@ function CinematicPortfolio() {
       <AboutScene />
       <SkillsScene />
       <ProjectsScene />
-      <TimelineScene />
+      <ExperienceScene />
+      <ProofScene />
       <ContactScene />
     </main>
   );
