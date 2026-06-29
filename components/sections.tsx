@@ -1,128 +1,213 @@
 "use client";
 
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { AnimatePresence, motion, useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
 import {
   ArrowUpRight,
   Award,
+  Check,
   Code2,
   FileText,
-  FolderOpen,
-  GitBranch,
   Mail,
-  RadioTower,
+  Radio,
   Send,
-  UserRound,
+  X,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { certificates, experienceItems, profileLinks, projects, skills } from "@/lib/portfolio-data";
+import {
+  achievements,
+  certificates,
+  experienceItems,
+  personalityTraits,
+  profile,
+  profileLinks,
+  projects,
+  skills,
+  socialLinks,
+  testimonials,
+} from "@/lib/portfolio-data";
+import type { Project } from "@/types/portfolio";
 
-const fadeUp = {
-  initial: { opacity: 0, y: 44, filter: "blur(10px)" },
+const AICore = dynamic(() => import("@/components/three/ai-core").then((mod) => mod.AICore), {
+  ssr: false,
+  loading: () => <div className="ai-core-fallback" aria-hidden="true" />,
+});
+
+const reveal = {
+  initial: { opacity: 0, y: 34, filter: "blur(12px)" },
   whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
   viewport: { once: true, margin: "-12%" },
-  transition: { duration: 0.75, ease: "easeOut" as const },
+  transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const },
 };
+
+function SectionHeading({ kicker, title, copy }: { kicker: string; title: string; copy?: string }) {
+  return (
+    <motion.div {...reveal} className="section-heading">
+      <p>{kicker}</p>
+      <h2>{title}</h2>
+      {copy ? <span>{copy}</span> : null}
+    </motion.div>
+  );
+}
+
+function TiltWindow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [5, -5]), { stiffness: 120, damping: 18 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-6, 6]), { stiffness: 120, damping: 18 });
+
+  return (
+    <motion.div
+      ref={ref}
+      className={`tilt-window magnetic ${className}`}
+      style={{ rotateX, rotateY }}
+      onPointerMove={(event) => {
+        const rect = ref.current?.getBoundingClientRect();
+        if (!rect) return;
+        x.set((event.clientX - rect.left) / rect.width - 0.5);
+        y.set((event.clientY - rect.top) / rect.height - 0.5);
+      }}
+      onPointerLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function ProjectTextVisual({ project }: { project: Project }) {
+  const points = project.proofPoints ?? [
+    project.short,
+    project.caseStudy.results,
+    `Tech stack: ${project.tech.join(", ")}`,
+  ];
+
+  return (
+    <div className="project-text-visual">
+      <span>{project.category}</span>
+      <strong>Project Proof</strong>
+      <p>{project.short}</p>
+      <ul>
+        {points.map((point) => (
+          <li key={point}>{point}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function HeroSection() {
   return (
-    <section id="hero" className="hero-section">
-      <motion.div {...fadeUp} className="hero-copy">
-        <div className="eyebrow">AI / ML / React / FastAPI / Cinematic UI</div>
-        <h1>
-          I build digital products that feel engineered for the future.
-        </h1>
-        <p>
-          Nayan Tupe creates practical AI systems, deployed FastAPI backends,
-          responsive React dashboards, and recruiter-ready project proof wrapped in a
-          luxury cinematic interface.
-        </p>
-        <div className="action-row">
-          <Button asChild variant="primary">
-            <a href="#projects">View work <ArrowUpRight size={18} /></a>
-          </Button>
-          <Button asChild>
-            <a href={profileLinks.resume} download>Resume <FileText size={18} /></a>
-          </Button>
-          <Button asChild>
-            <a href="#contact">Contact <Mail size={18} /></a>
-          </Button>
-        </div>
+    <section id="home" className="hero-section scene">
+      <motion.div className="hero-copy" initial="initial" animate="whileInView">
+        <motion.p {...reveal} className="micro">Hello.</motion.p>
+        <motion.h1 {...reveal}>
+          <span>I'm Nayan Tupe.</span>
+          Data Science & ML Developer
+        </motion.h1>
+        <motion.strong {...reveal}>Python, ML models, FastAPI APIs and React/Vite dashboards.</motion.strong>
+        <motion.p {...reveal} className="hero-bio">
+          Resume-backed portfolio for data science, machine learning, backend API, analytics dashboard and frontend developer roles.
+        </motion.p>
+        <motion.div {...reveal} className="action-row">
+          <Button asChild variant="primary"><a href="#projects">Explore Projects <ArrowUpRight size={18} /></a></Button>
+          <Button asChild><a href={profileLinks.resume} download>Resume <FileText size={18} /></a></Button>
+          <Button asChild><a href="#contact">Let's Connect <Mail size={18} /></a></Button>
+        </motion.div>
       </motion.div>
-      <motion.div {...fadeUp} className="hero-orb-panel">
-        <div className="code-shard shard-one">model.predict(customer)</div>
-        <div className="code-shard shard-two">deploy.render(api)</div>
-        <div className="portrait-system">
-          <Image src="/images/nayan-ai-avatar.png" alt="Nayan Tupe AI avatar" fill priority sizes="420px" />
-          <span />
-          <span />
-        </div>
-        <div className="system-readout">
-          <strong>Portfolio OS</strong>
-          <span>All proof links active</span>
-          <i />
+      <motion.div {...reveal} className="hero-core">
+        <AICore />
+        <div className="status-console" aria-label="AI core status">
+          {profile.status.map((item, index) => (
+            <span key={item} className={index === 0 ? "online" : ""}>{item}</span>
+          ))}
         </div>
       </motion.div>
     </section>
   );
 }
 
-export function AboutSection() {
+export function IdentitySection() {
+  const modules = [
+    ["Name", profile.name],
+    ["Role", profile.role],
+    ["Location", profile.location],
+    ["Experience", profile.experience],
+    ["Education", profile.education],
+    ["Target Roles", profile.targetRoles],
+  ];
+
   return (
-    <section id="about" className="scene-section">
-      <div className="section-heading">
-        <span>About / Identity Hologram</span>
-        <h2>AI/ML developer building practical systems with cinematic product presentation.</h2>
+    <section id="identity" className="scene identity-scene">
+      <SectionHeading
+        kicker="Identity Scan"
+        title="A Data Science, Machine Learning and Software Developer profile built from resume proof."
+        copy="The content reflects Nayan's resume: skills, projects, internships, certificates, live links and GitHub proof."
+      />
+      <div className="identity-grid">
+        <TiltWindow className="portrait-glass">
+          <Image src="/images/profile.jpg" alt="Nayan Tupe portrait" fill sizes="(max-width: 900px) 90vw, 430px" />
+          <div className="scan-line" />
+        </TiltWindow>
+        <div className="identity-modules">
+          {modules.map(([label, value], index) => (
+            <motion.article {...reveal} transition={{ ...reveal.transition, delay: index * 0.055 }} className="identity-module" key={label}>
+              <small key="label">{label}</small>
+              <p key="value">{value}</p>
+            </motion.article>
+          ))}
+        </div>
       </div>
-      <motion.div {...fadeUp} className="about-console">
-        <div className="profile-ring">
-          <Image src="/images/profile.jpg" alt="Nayan Tupe profile portrait" fill sizes="360px" />
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="about-copy">
-          <p>
-            Computer Science graduate with hands-on experience across Data Science,
-            Machine Learning, Data Analysis, FastAPI, React dashboards, Git/GitHub
-            workflows, QA testing, and production deployment.
-          </p>
-          <div className="stats-grid">
-            <strong>7+<span>Portfolio projects</span></strong>
-            <strong>15+<span>Responsive builds</span></strong>
-            <strong>20+<span>QA issues closed</span></strong>
-            <strong>1<span>AI SaaS platform</span></strong>
-          </div>
-        </div>
-      </motion.div>
+      <div className="trait-field">
+        {personalityTraits.map((trait, index) => (
+          <motion.article {...reveal} transition={{ ...reveal.transition, delay: index * 0.04 }} className="trait-module" key={trait.title}>
+            <h3 key="title">{trait.title}</h3>
+            <p key="copy">{trait.copy}</p>
+          </motion.article>
+        ))}
+      </div>
     </section>
   );
 }
 
 export function SkillsSection() {
+  const [active, setActive] = useState("Python");
+
   return (
-    <section id="skills" className="scene-section">
-      <div className="section-heading">
-        <span>Skill Constellation</span>
-        <h2>Everything connects: data, APIs, interfaces, motion and deployment.</h2>
-      </div>
-      <div className="skill-constellation">
-        {skills.map((skill, index) => {
-          const Icon = skill.icon;
+    <section id="skills" className="scene knowledge-scene">
+      <SectionHeading
+        kicker="Knowledge Network"
+        title="Resume skills connected across ML, backend APIs, dashboards, deployment and proof."
+        copy="Hover a node to see related tools light up."
+      />
+      <div className="knowledge-network" role="list" aria-label="Technology knowledge network">
+        <svg className="network-lines" viewBox="0 0 1200 620" preserveAspectRatio="none" aria-hidden="true">
+          {skills.map((skill, index) => {
+            const x1 = 100 + (index % 6) * 195;
+            const y1 = 90 + Math.floor(index / 6) * 190;
+            const x2 = 100 + ((index + 2) % 6) * 195;
+            const y2 = 90 + Math.floor(((index + 2) % skills.length) / 6) * 190;
+            return <path key={skill.name} d={`M${x1} ${y1} C${x1 + 80} ${y1 - 70}, ${x2 - 80} ${y2 + 70}, ${x2} ${y2}`} />;
+          })}
+        </svg>
+        {skills.map((skill) => {
+          const related = skill.name === active || skill.related.includes(active);
           return (
-            <motion.div
-              {...fadeUp}
-              transition={{ ...fadeUp.transition, delay: index * 0.035 }}
-              className="skill-node magnetic"
+            <button
               key={skill.name}
+              className={`skill-node ${related ? "active" : ""}`}
+              onMouseEnter={() => setActive(skill.name)}
+              onFocus={() => setActive(skill.name)}
+              role="listitem"
             >
-              <Icon key="icon" size={22} />
-              <strong key="name">{skill.name}</strong>
-              <span key="group">{skill.group}</span>
-            </motion.div>
+              <span>{skill.group}</span>
+              <strong>{skill.name}</strong>
+            </button>
           );
         })}
       </div>
@@ -130,69 +215,150 @@ export function SkillsSection() {
   );
 }
 
-export function ProjectsSection() {
+function ProjectModal({ project, onClose }: { project: Project | null; onClose: () => void }) {
+  useEffect(() => {
+    if (!project) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", close);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", close);
+    };
+  }, [project, onClose]);
+
+  const rows = project
+    ? [
+        ["Overview", project.caseStudy.overview],
+        ["Problem", project.caseStudy.problem],
+        ["Research", project.caseStudy.research],
+        ["Planning", project.caseStudy.planning],
+        ["Design", project.caseStudy.design],
+        ["Development", project.caseStudy.development],
+        ["Challenges", project.caseStudy.challenges],
+        ["Solutions", project.caseStudy.solutions],
+        ["Results", project.caseStudy.results],
+        ["Performance", project.caseStudy.performance],
+        ["Future Improvements", project.caseStudy.future],
+      ]
+    : [];
+
   return (
-    <section id="projects" className="scene-section projects-section">
-      <div className="section-heading">
-        <span>Project Cinema</span>
-        <h2>Real project proof, live links, GitHub repositories and case-study energy.</h2>
-      </div>
-      <div className="poster-grid">
-        {projects.slice(0, 3).map((project, index) => (
-          <motion.article {...fadeUp} transition={{ ...fadeUp.transition, delay: index * 0.05 }} className="project-poster magnetic" key={project.title}>
-            <div key="media" className="poster-media">
-              <Image src={project.image} alt={`${project.title} preview`} fill sizes="(max-width: 900px) 100vw, 33vw" />
-              <span>{project.highlight ? "Project Highlight" : project.category}</span>
+    <AnimatePresence>
+      {project && (
+        <motion.div className="case-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" aria-label={`${project.title} case study`}>
+          <motion.div className="case-study" initial={{ y: 70, scale: 0.96, filter: "blur(18px)" }} animate={{ y: 0, scale: 1, filter: "blur(0px)" }} exit={{ y: 40, scale: 0.98, opacity: 0 }} transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}>
+            <button className="case-close" onClick={onClose} aria-label="Close case study"><X size={18} /></button>
+            <div className={project.image ? "case-hero" : "case-hero case-hero-text"}>
+              {project.image ? <Image src={project.image} alt={`${project.title} project preview`} fill sizes="100vw" /> : null}
+              <div>
+                <span>{project.category}</span>
+                <h2>{project.title}</h2>
+                <p>{project.short}</p>
+                {!project.image ? (
+                  <ul>
+                    {(project.proofPoints ?? []).map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             </div>
-            <div key="copy" className="poster-copy">
+            <div className="case-content">
+              {rows.map(([label, copy]) => (
+                <article key={label}>
+                  <h3>{label}</h3>
+                  <p>{copy}</p>
+                </article>
+              ))}
+              <article>
+                <h3>Tech Stack</h3>
+                <div className="tag-cloud">{project.tech.map((tech) => <span key={tech}>{tech}</span>)}</div>
+              </article>
+              <article>
+                <h3>Gallery</h3>
+                {project.gallery?.length || project.image ? (
+                  <div className="case-gallery">
+                    {(project.gallery ?? (project.image ? [project.image] : [])).map((image) => (
+                      <Image key={image} src={image} alt={`${project.title} gallery image`} width={420} height={260} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="case-gallery-text">
+                    {(project.proofPoints ?? [project.description]).map((point) => (
+                      <p key={point}>{point}</p>
+                    ))}
+                  </div>
+                )}
+              </article>
+              <div className="case-actions">
+                {project.github ? <Button asChild><a href={project.github} target="_blank" rel="noreferrer">GitHub <Code2 size={17} /></a></Button> : null}
+                {project.live ? <Button asChild variant="primary"><a href={project.live} target="_blank" rel="noreferrer">Live Demo <ArrowUpRight size={17} /></a></Button> : null}
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export function ProjectsSection() {
+  const [selected, setSelected] = useState<Project | null>(null);
+
+  return (
+    <section id="projects" className="scene projects-scene">
+      <SectionHeading
+        kicker="Project Windows"
+        title="Resume projects with GitHub, live deployment, API proof and presentation material."
+        copy="Each window expands into a case-study view written from the resume project details."
+      />
+      <div className="project-window-grid">
+        {projects.map((project, index) => (
+          <TiltWindow className={project.highlight ? "project-window featured" : "project-window"} key={project.slug}>
+            <div className="window-chrome"><i /><i /><i /><span>{project.category}</span></div>
+            <div className="project-media">
+              {project.image ? (
+                <Image src={project.image} alt={`${project.title} interface preview`} fill sizes="(max-width: 900px) 92vw, 46vw" />
+              ) : (
+                <ProjectTextVisual project={project} />
+              )}
+            </div>
+            <div className="project-copy">
               <h3>{project.title}</h3>
               <p>{project.description}</p>
-              <div className="tag-cloud">
-                {project.tech.map((tech) => <span key={tech}>{tech}</span>)}
-              </div>
+              <div className="tag-cloud">{project.tech.slice(0, 5).map((tech) => <span key={tech}>{tech}</span>)}</div>
               <div className="project-actions">
-                {project.live && <a href={project.live} target="_blank">Live <ArrowUpRight size={15} /></a>}
-                {project.github && <a href={project.github} target="_blank">GitHub <Code2 size={15} /></a>}
-                {project.presentation && <a href={project.presentation} target="_blank">PPT <FileText size={15} /></a>}
+                <button onClick={() => setSelected(project)}>Case Study <ArrowUpRight size={15} /></button>
+                {project.github ? <a href={project.github} target="_blank" rel="noreferrer">GitHub <Code2 size={15} /></a> : null}
+                {project.live ? <a href={project.live} target="_blank" rel="noreferrer">Live Demo <Radio size={15} /></a> : null}
               </div>
             </div>
-          </motion.article>
+            <span className="window-index">{String(index + 1).padStart(2, "0")}</span>
+          </TiltWindow>
         ))}
       </div>
-      <div className="evidence-grid">
-        {projects.map((project) => (
-          <article className="evidence-tile magnetic" key={project.title}>
-            <span>{project.category}</span>
-            <h3>{project.title}</h3>
-            <p>{project.description}</p>
-            <div className="project-actions">
-              {project.live && <a href={project.live} target="_blank">Live</a>}
-              {project.github && <a href={project.github} target="_blank">Code</a>}
-              {project.presentation && <a href={project.presentation} target="_blank">Proof</a>}
-            </div>
-          </article>
-        ))}
-      </div>
+      <ProjectModal project={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }
 
 export function ExperienceSection() {
   return (
-    <section id="experience" className="scene-section">
-      <div className="section-heading">
-        <span>Experience Beam</span>
-        <h2>Professional exposure with production websites, QA and business workflows.</h2>
-      </div>
-      <div className="timeline-beam">
+    <section id="experience" className="scene memory-scene">
+      <SectionHeading
+        kicker="Memory Timeline"
+        title="Stored professional memories with light, depth and useful proof."
+      />
+      <div className="memory-timeline">
         {experienceItems.map((item, index) => (
-          <motion.article {...fadeUp} transition={{ ...fadeUp.transition, delay: index * 0.08 }} className="timeline-card magnetic" key={item.role}>
+          <motion.article {...reveal} transition={{ ...reveal.transition, delay: index * 0.09 }} className="memory-capsule" key={`${item.role}-${item.date}`}>
             <span key="date">{item.date}</span>
             <h3 key="role">{item.role}</h3>
             <p key="company">{item.company}</p>
-            <ul key="points">
-              {item.points.map((point) => <li key={point}>{point}</li>)}
-            </ul>
+            <ul key="points">{item.points.map((point) => <li key={point}>{point}</li>)}</ul>
           </motion.article>
         ))}
       </div>
@@ -202,81 +368,125 @@ export function ExperienceSection() {
 
 export function CertificatesSection() {
   return (
-    <section id="proof" className="scene-section">
-      <div className="section-heading">
-        <span>Certificates / Proof Vault</span>
-        <h2>Learning proof, screenshots, resumes and deployment evidence in one place.</h2>
-      </div>
+    <section className="scene proof-scene" aria-labelledby="proof-title">
+      <SectionHeading kicker="Proof Vault" title="Certificates and evidence presented as premium floating documents." />
       <div className="certificate-grid">
         {certificates.map((certificate) => (
-          <article className="certificate-card magnetic" key={certificate.title}>
+          <a className="certificate-doc" href={certificate.link} target="_blank" rel="noreferrer" key={certificate.title}>
             <Award size={24} />
             <h3>{certificate.title}</h3>
             <p>{certificate.source}</p>
             <span>{certificate.date}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Counter({ value, suffix }: { value: number; suffix: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (time: number) => {
+      const progress = Math.min(1, (time - start) / 1200);
+      setCount(Math.round(value * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [inView, value]);
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
+export function AchievementsSection() {
+  return (
+    <section className="scene achievement-scene">
+      <SectionHeading kicker="Achievement Dashboard" title="Quiet numbers that show momentum, learning and shipping energy." />
+      <div className="achievement-grid">
+        {achievements.map((item) => (
+          <article className="achievement-tile" key={item.label}>
+            <Counter value={item.value} suffix={item.suffix} />
+            <p>{item.label}</p>
           </article>
         ))}
       </div>
-      <div className="proof-vault">
-        <div>
-          <h3>Portfolio proof folder</h3>
-          <p>Project presentations, certificates, screenshots, resumes and deployment proof are available for fast verification.</p>
-        </div>
-        <div className="action-row">
-          <Button asChild variant="primary"><a href={profileLinks.portfolioDrive} target="_blank"><FolderOpen size={18} /> Open Drive</a></Button>
-          <Button asChild><a href={profileLinks.resumeWithCertificates} download><FileText size={18} /> Resume + Certificates</a></Button>
-        </div>
+    </section>
+  );
+}
+
+export function TestimonialsSection() {
+  return (
+    <section className="scene testimonial-scene">
+      <SectionHeading kicker="Signal" title="Feedback panels with concise proof of trust." />
+      <div className="testimonial-grid">
+        {testimonials.map((item) => (
+          <article className="testimonial-panel" key={item.quote}>
+            <p>"{item.quote}"</p>
+            <span>{item.author} / {item.role}</span>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
 
-const contactSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  message: z.string().min(8),
-});
-
-type ContactValues = z.infer<typeof contactSchema>;
-
 export function ContactSection() {
-  const form = useForm<ContactValues>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: { name: "", email: "", message: "" },
-  });
+  const [sent, setSent] = useState(false);
+  const [submittedTo, setSubmittedTo] = useState("");
 
   return (
-    <section id="contact" className="scene-section contact-section">
-      <div className="contact-console">
-        <div>
-          <span className="eyebrow">Holographic Contact Console</span>
-          <h2>Ready to launch a smarter interface?</h2>
-          <p>Send a signal for AI/ML, dashboard, backend or frontend roles.</p>
+    <section id="contact" className="scene contact-scene">
+      <SectionHeading
+        kicker="Connection"
+        title="Let the journey continue into a real conversation."
+        copy={`Target roles: ${profile.targetRoles}.`}
+      />
+      <div className="contact-grid">
+        <div className="contact-copy">
+          <h3><a href={`mailto:${profile.email}`}>{profile.email}</a></h3>
+          <p>{profile.bio}</p>
           <div className="social-row">
-            <a href={profileLinks.github} target="_blank"><GitBranch size={18} /> GitHub</a>
-            <a href={profileLinks.linkedin} target="_blank"><UserRound size={18} /> LinkedIn</a>
-            <a href="mailto:nayantupe699@gmail.com"><Mail size={18} /> Email</a>
+            {socialLinks.map((link) => <a key={link.label} href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">{link.label}</a>)}
           </div>
         </div>
         <form
-          onSubmit={form.handleSubmit(() => form.reset())}
           className="contact-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const data = new FormData(form);
+            const name = String(data.get("name") ?? "");
+            const email = String(data.get("email") ?? "");
+            const message = String(data.get("message") ?? "");
+            const subject = encodeURIComponent(`Portfolio message from ${name || "visitor"}`);
+            const body = encodeURIComponent(
+              `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}\n\nSent from Nayan Tupe portfolio contact form.`,
+            );
+            const mailto = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+            window.location.href = mailto;
+            setSubmittedTo(profile.email);
+            setSent(true);
+          }}
         >
-          <input placeholder="Your name" {...form.register("name")} />
-          <input placeholder="Email address" {...form.register("email")} />
-          <textarea placeholder="Message" rows={5} {...form.register("message")} />
-          <Button type="submit" variant="primary">Transmit <Send size={17} /></Button>
+          <label>Name<input required name="name" autoComplete="name" /></label>
+          <label>Email<input required type="email" name="email" autoComplete="email" /></label>
+          <label>Message<textarea required name="message" rows={5} /></label>
+          <p className="form-note">
+            This form opens an email draft addressed to <strong>{profile.email}</strong>. Click send in your mail app to deliver it.
+          </p>
+          <Button type="submit" variant="primary">Send Message <Send size={17} /></Button>
+          {sent ? (
+            <p className="form-success">
+              <Check size={17} /> Email draft opened for {submittedTo}. Please send it from your mail app.
+            </p>
+          ) : null}
         </form>
       </div>
     </section>
-  );
-}
-
-export function Footer() {
-  return (
-    <footer className="footer">
-      <span>Nayan Tupe / AI ML Developer</span>
-      <span><RadioTower size={15} /> Signal stable</span>
-    </footer>
   );
 }

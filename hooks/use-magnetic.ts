@@ -22,7 +22,7 @@ export function useMagnetic(selector = ".magnetic") {
       };
 
       const leave = () => {
-        gsap.to(item, { x: 0, y: 0, duration: 0.55, ease: "elastic.out(1, 0.45)" });
+        gsap.to(item, { x: 0, y: 0, duration: 0.45, ease: "expo.out" });
       };
 
       item.addEventListener("mousemove", move);

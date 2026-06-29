@@ -1,32 +1,41 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import gsap from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
 import { useScroll, useSpring } from "framer-motion";
 import { useEffect } from "react";
-import { CustomCursor } from "@/components/custom-cursor";
-import { LoadingScreen } from "@/components/loading-screen";
-import { Navbar } from "@/components/navbar";
+import { AIAssistant } from "@/components/assistant/ai-assistant";
+import { BootSequence } from "@/components/animations/boot-sequence";
+import { LivingBackground } from "@/components/background/living-background";
+import { FloatingNav } from "@/components/layout/floating-nav";
 import {
-  AboutSection,
+  AchievementsSection,
   CertificatesSection,
   ContactSection,
   ExperienceSection,
-  Footer,
   HeroSection,
+  IdentitySection,
   ProjectsSection,
   SkillsSection,
+  TestimonialsSection,
 } from "@/components/sections";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 import { useMagnetic } from "@/hooks/use-magnetic";
 
-const GalaxyScene = dynamic(() => import("@/components/three/galaxy-scene").then((mod) => mod.GalaxyScene), {
-  ssr: false,
-  loading: () => <div className="webgl-stage webgl-fallback" />,
-});
+gsap.registerPlugin(ScrollTrigger);
+
+function ScrollIndicator() {
+  return (
+    <div className="scroll-indicator" aria-hidden="true">
+      <span />
+      <i />
+    </div>
+  );
+}
 
 export function CinematicPortfolio() {
   const { scrollYProgress } = useScroll();
-  const progress = useSpring(scrollYProgress, { stiffness: 80, damping: 22, mass: 0.25 });
+  const progress = useSpring(scrollYProgress, { stiffness: 80, damping: 24, mass: 0.22 });
   useMagnetic();
 
   useEffect(() => {
@@ -34,38 +43,56 @@ export function CinematicPortfolio() {
       document.documentElement.style.setProperty("--scroll-progress", String(value));
     });
 
-    const move = (event: PointerEvent) => {
-      document.documentElement.style.setProperty("--pointer-x", String((event.clientX / window.innerWidth) * 2 - 1));
-      document.documentElement.style.setProperty("--pointer-y", String(-(event.clientY / window.innerHeight) * 2 + 1));
-    };
-
-    window.addEventListener("pointermove", move, { passive: true });
     document.body.classList.add("cinema-mode");
+
+    const hello = () => {
+      document.documentElement.classList.add("hello-mode");
+      window.setTimeout(() => document.documentElement.classList.remove("hello-mode"), 1800);
+    };
+    window.addEventListener("portfolio:hello", hello);
+
+    const keys: string[] = [];
+    const konami = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+    const keydown = (event: KeyboardEvent) => {
+      keys.push(event.key);
+      keys.splice(-konami.length - 1, Math.max(0, keys.length - konami.length));
+      if (konami.every((key, index) => keys[index] === key)) {
+        document.documentElement.classList.toggle("gold-mode");
+      }
+      if (event.shiftKey && event.key.toLowerCase() === "d") {
+        document.documentElement.classList.toggle("developer-overlay");
+      }
+    };
+    window.addEventListener("keydown", keydown);
 
     return () => {
       unsubscribe();
-      window.removeEventListener("pointermove", move);
       document.body.classList.remove("cinema-mode");
+      window.removeEventListener("portfolio:hello", hello);
+      window.removeEventListener("keydown", keydown);
     };
   }, [progress]);
 
   return (
     <SmoothScrollProvider>
       <main className="cinema-app">
-        <LoadingScreen />
-        <CustomCursor />
-        <GalaxyScene />
-        <div className="noise-layer" aria-hidden="true" />
-        <div className="spotlight-layer" aria-hidden="true" />
-        <Navbar />
+        <BootSequence />
+        <LivingBackground />
+        <ScrollIndicator />
+        <FloatingNav />
         <HeroSection />
-        <AboutSection />
+        <IdentitySection />
         <SkillsSection />
         <ProjectsSection />
         <ExperienceSection />
         <CertificatesSection />
+        <AchievementsSection />
+        <TestimonialsSection />
         <ContactSection />
-        <Footer />
+        <AIAssistant />
+        <noscript>
+          <div className="noscript">Nayan Tupe portfolio. JavaScript is required for the cinematic OS interface, but the resume is available at /Nayan_Tupe_Resume.pdf.</div>
+        </noscript>
       </main>
     </SmoothScrollProvider>
   );
